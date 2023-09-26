@@ -19,7 +19,6 @@
 #include <readline/history.h>
 #include "sdb.h"
 
-#include "expr.c"
 
 // set state
 #include <utils.h>

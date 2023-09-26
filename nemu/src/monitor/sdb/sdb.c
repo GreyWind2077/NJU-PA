@@ -19,7 +19,9 @@
 #include <readline/history.h>
 #include "sdb.h"
 
+// set state
 #include <utils.h>
+#include <memory/vaddr.h>
 
 static int is_batch_mode = false;
 
@@ -57,6 +59,74 @@ static int cmd_q(char *args) {
 
 static int cmd_help(char *args);
 
+// execution n steps
+static int cmd_si(char *args) {
+  char *arg = strtok(NULL, " ");
+  int n;
+
+  if (arg == NULL) {
+    n = 1;
+  } else {
+    n = strtol(arg, NULL, 10);
+  }
+  cpu_exec(n);
+  return 0;
+}
+
+// display registers or watchpoin info
+static int cmd_info(char *args) {
+  char *arg = strtok(NULL, " ");
+  if (arg == NULL) {
+    printf("Not registers or watchpoint\n");
+  } else {
+    if (strcmp(arg, "r") == 0) {
+      isa_reg_display();
+    } else if (strcmp(arg, "w") == 0) {
+      //to w
+    } else {
+      printf("args error, please Usage r or w\n");
+    }
+  }
+
+  return 0;
+}
+
+// scan memory
+static int cmd_x(char *args) {
+  char *arg1 = strtok(NULL, " ");
+  char *arg2 = strtok(NULL, " ");
+  if (arg1 == NULL || arg2 == NULL) {
+    printf("Usage: x N EXPR\n");
+    return 0;
+  }
+  int n = strtol(arg1, NULL, 10);
+  vaddr_t expr = strtol(arg2, NULL, 16);
+
+  int i, j;
+  for (i = 0; i < n;) {
+    printf(ANSI_FMT("%#018x: ", ANSI_FG_CYAN), expr);
+    for (j = 0; i < n && j < 4; i++, j++) {
+      word_t w = vaddr_read(expr, 8);
+      expr += 8;
+      printf("%#018x ", w);
+    }
+    puts("");
+  }
+  return 0;
+}
+
+static int cmd_p(char *agrs) {
+  bool success;
+  word_t res = expr(agrs, &success);
+  if (!success) {
+    printf("invalid expression\n");
+  } else {
+    printf("%u\n", res);
+  }
+  return 0;
+}
+
+
 static struct {
   const char *name;
   const char *description;
@@ -67,8 +137,10 @@ static struct {
   { "q", "Exit NEMU", cmd_q },
 
   /* TODO: Add more commands */
-  
-
+  { "si", "Continue the execution in N steps, default 1", cmd_si },
+  { "info", "Display information about registers or wathpoints", cmd_info},
+  { "x", "Usage: x N EXPR. Scan the memory from EXPR", cmd_x},
+  { "p", "Usage: p EXPR. Calculate the experssion", cmd_p},
 };
 
 #define NR_CMD ARRLEN(cmd_table)
@@ -141,9 +213,51 @@ void sdb_mainloop() {
   }
 }
 
+
+
+void test_expr() {
+  const char* file = "/home/greywind/Desktop/ics2022/nemu/tools/gen-expr/build/input";
+
+  FILE *fp = fopen(file, "r");
+  if (fp == NULL) {
+    perror("open test_input fail");
+  }
+  char *exprs = NULL;
+  word_t correct_res;
+  size_t len = 0;
+  ssize_t read;
+  bool success = false;
+  
+  while(true) {
+    if (fscanf(fp, "%u", &correct_res) == -1)break;
+    read = getline(&exprs, &len, fp);
+    exprs[read - 1] = '\0';
+    
+    word_t res = expr(exprs, &success);
+    assert(success);
+    if (res != correct_res) {
+      puts(exprs);
+      printf("correct_res: %u, result: %u\n", correct_res, res);
+      assert(0);
+    }
+    fclose(fp);
+    if (exprs) free(exprs);
+    Log("expr test pass");
+  }
+
+
+
+  
+}
+
+
+
+
 void init_sdb() {
   /* Compile the regular expressions. */
   init_regex();
+
+  test_expr();
 
   /* Initialize the watchpoint pool. */
   init_wp_pool();

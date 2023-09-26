@@ -20,7 +20,6 @@
  */
 #include <regex.h>
 
-#include "sdb.h"
 
 
 enum {

@@ -19,6 +19,8 @@
 #include <readline/history.h>
 #include "sdb.h"
 
+#include "expr.c"
+
 // set state
 #include <utils.h>
 #include <memory/vaddr.h>
@@ -245,9 +247,6 @@ void test_expr() {
     Log("expr test pass");
   }
 
-
-
-  
 }
 
 

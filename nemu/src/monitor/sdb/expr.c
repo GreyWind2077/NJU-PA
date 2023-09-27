@@ -201,7 +201,7 @@ int get_position(int p, int q) {
 
 }
 
-uint32_t eval(int p, int q, bool *success) {
+word_t eval(int p, int q, bool *success) {
   *success = true;
   if (p > q) {
     *success = false;

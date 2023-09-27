@@ -241,11 +241,11 @@ void test_expr() {
       printf("correct_res: %u, result: %u\n", correct_res, res);
       assert(0);
     }
-    fclose(fp);
-    if (exprs) free(exprs);
-    Log("expr test pass");
+    
   }
-
+  fclose(fp);
+  if (exprs) free(exprs);
+  Log("expr test pass");
 }
 
 

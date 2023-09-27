@@ -21,7 +21,7 @@
 
 
 // set state
-#include <utils.h>
+//#include <utils.h>
 #include <memory/vaddr.h>
 
 static int is_batch_mode = false;

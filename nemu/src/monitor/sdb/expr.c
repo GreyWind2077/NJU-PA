@@ -53,7 +53,7 @@ static struct rule {
 
   {"[0-9]+", TK_NUM},
   {"\\$\\w+", TK_REG},
-  {"[a-Az-z_]\\w*", TK_VAR}
+  {"[A-Za-z_]\\w*", TK_VAR},
 
 };
 
@@ -240,8 +240,8 @@ uint32_t eval(int p, int q, bool *success) {
     default:
       assert(0);
     
+    }
   }
-}
 }
 
 

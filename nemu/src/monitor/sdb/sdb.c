@@ -216,37 +216,37 @@ void sdb_mainloop() {
 
 
 
-// void test_expr() {
-//   const char* file = "/home/greywind/Desktop/ics2022/nemu/tools/gen-expr/build/input";
+void test_expr() {
+  const char* file = "/home/greywind/Desktop/ics2022/nemu/tools/gen-expr/build/input";
 
-//   FILE *fp = fopen(file, "r");
-//   if (fp == NULL) {
-//     perror("open test_input fail");
-//   }
-//   char *exprs = NULL;
-//   word_t correct_res;
-//   size_t len = 0;
-//   ssize_t read;
-//   bool success = false;
+  FILE *fp = fopen(file, "r");
+  if (fp == NULL) {
+    perror("open test_input fail");
+  }
+  char *exprs = NULL;
+  word_t correct_res;
+  size_t len = 0;
+  ssize_t read;
+  bool success = false;
   
-//   while(true) {
-//     if (fscanf(fp, "%u", &correct_res) == -1)break;
-//     read = getline(&exprs, &len, fp);
-//     exprs[read - 1] = '\0';
+  while(true) {
+    if (fscanf(fp, "%u", &correct_res) == -1)break;
+    read = getline(&exprs, &len, fp);
+    exprs[read - 1] = '\0';
     
-//     word_t res = expr(exprs, &success);
-//     assert(success);
-//     if (res != correct_res) {
-//       puts(exprs);
-//       printf("correct_res: %u, result: %u\n", correct_res, res);
-//       assert(0);
-//     }
-//     fclose(fp);
-//     if (exprs) free(exprs);
-//     Log("expr test pass");
-//   }
+    word_t res = expr(exprs, &success);
+    assert(success);
+    if (res != correct_res) {
+      puts(exprs);
+      printf("correct_res: %u, result: %u\n", correct_res, res);
+      assert(0);
+    }
+    fclose(fp);
+    if (exprs) free(exprs);
+    Log("expr test pass");
+  }
 
-// }
+}
 
 
 
@@ -255,7 +255,7 @@ void init_sdb() {
   /* Compile the regular expressions. */
   init_regex();
 
-  //test_expr();
+  test_expr();
 
   /* Initialize the watchpoint pool. */
   init_wp_pool();

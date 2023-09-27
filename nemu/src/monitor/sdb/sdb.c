@@ -138,7 +138,7 @@ static struct {
   { "q", "Exit NEMU", cmd_q },
 
   /* TODO: Add more commands */
-  { "si", "Continue the execution in N steps, default 1", cmd_si },
+  { "si", "Execute N steps, default 1", cmd_si },
   { "info", "Display information about registers or wathpoints", cmd_info},
   { "x", "Usage: x N EXPR. Scan the memory from EXPR", cmd_x},
   { "p", "Usage: p EXPR. Calculate the experssion", cmd_p},
@@ -255,7 +255,7 @@ void init_sdb() {
   /* Compile the regular expressions. */
   init_regex();
 
-  test_expr();
+  //test_expr();
 
   /* Initialize the watchpoint pool. */
   init_wp_pool();

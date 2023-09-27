@@ -201,7 +201,7 @@ int get_position(int p, int q) {
 
 }
 
-word_t eval(int p, int q, bool *success) {
+uint32_t eval(int p, int q, bool *success) {
   *success = true;
   if (p > q) {
     *success = false;
@@ -242,10 +242,11 @@ word_t eval(int p, int q, bool *success) {
     
   }
 }
+}
 
 
 
-__attribute__((unused)) word_t expr(char *e, bool *success){
+word_t expr(char *e, bool *success){
   if (!make_token(e)) {
     *success = false;
     return 0;
@@ -254,5 +255,4 @@ __attribute__((unused)) word_t expr(char *e, bool *success){
   return eval(0, nr_token - 1, success);
   /* TODO: Insert codes to evaluate the expression. */
   //TODO();
-}
 }

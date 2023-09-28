@@ -23,7 +23,6 @@
 // set state
 //#include <utils.h>
 #include "memory/vaddr.h"
-#include "watchpoint.c"
 
 static int is_batch_mode = false;
 

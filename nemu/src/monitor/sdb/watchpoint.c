@@ -22,7 +22,8 @@ typedef struct watchpoint {
   struct watchpoint *next;
 
   /* TODO: Add more members if necessary */
-
+  char *expr;
+  word_t ret;
 } WP;
 
 static WP wp_pool[NR_WP] = {};
@@ -41,3 +42,66 @@ void init_wp_pool() {
 
 /* TODO: Implement the functionality of watchpoint */
 
+static WP* new_wp() {
+  assert(free_);
+  WP *ret = free_;
+  free_ = free_->next;
+  ret->next = head;
+  head = ret;
+  return ret;
+}
+
+static void free_wp(WP *wp) {
+  WP* h = head;
+  if (h == wp) head = NULL;
+  else {
+    while (h && h->next != wp) h = h->next;
+    assert(h);
+    h->next = wp->next;
+  }
+  wp->next = free_;
+  free_ = wp;
+}
+
+void wp_add(char *expr, word_t res) {
+  WP* wp = new_wp();
+  strcpy(wp->expr, expr);
+  wp->ret = res;
+  printf("watchpoint set. %d: %s\n", wp->NO, wp->expr);
+}
+
+void wp_remove(int num) {
+  assert(num < NR_WP);
+  WP* wp = &wp_pool[num];
+  free_wp(wp);
+  printf("delete watchpoint. %d: %s", wp->NO, wp->expr);
+}
+
+void wp_display() {
+  WP *wp = head;
+  if (wp == NULL) {
+    puts("no watchpoints.");
+    return;
+  }
+  printf("%-8s%-8s\n", "Number", "Expr");
+  while (wp) {
+    printf("%-8d%-8s\n", wp->NO, wp->expr);
+    wp = wp->next;
+  }
+}
+
+void wp_difftest() {
+  WP* wp = head;
+  while (wp) {
+    bool success;
+    word_t new = expr(wp->expr, &success);
+    if (wp->ret != new) {
+      printf("Watchpoint %d: %s\n"
+        "Old value = %u\n"
+        "New value = %u\n"
+        , wp->NO, wp->expr, wp->ret, new);
+      wp->ret = new;
+    }
+    wp = wp->next;
+  }
+}

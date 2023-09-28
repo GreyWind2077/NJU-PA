@@ -73,7 +73,7 @@ static struct rule {
 // #define TYPE_FROM (type, types) type_from(type, types, ARRLEN(types))
 
 static int bound_types[] = {')', TK_NUM, TK_REG};
-static int nop_types[] = {'(', ')', TK_NEG, TK_REG};
+static int nop_types[] = {'(', ')', TK_NUM, TK_REG};
 static int op_types[] = {TK_NEG, TK_POS, TK_DEREF};
 
 

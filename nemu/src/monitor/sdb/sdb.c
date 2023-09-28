@@ -23,6 +23,7 @@
 // set state
 //#include <utils.h>
 #include "memory/vaddr.h"
+#include "watchpoint.c"
 
 static int is_batch_mode = false;
 
@@ -83,7 +84,7 @@ static int cmd_info(char *args) {
     if (strcmp(arg, "r") == 0) {
       isa_reg_display();
     } else if (strcmp(arg, "w") == 0) {
-      //to w
+      wp_display();
     } else {
       printf("args error, please Usage r or w\n");
     }
@@ -127,6 +128,33 @@ static int cmd_p(char *agrs) {
   return 0;
 }
 
+static int cmd_w(char *agrs) {
+  if (agrs == NULL) {
+    printf("not watchpoint args\n");
+    return 0;
+  }
+  bool success;
+  word_t res = expr(agrs, &success);
+  if (!success) {
+    printf("invalid expression\n");
+  } else {
+    wp_add(agrs, res);
+  }
+  return 0;
+}
+
+static int cmd_d(char *args) {
+  char *arg = strtok(NULL, "");
+  if (!arg) {
+    printf("not delete watchpoint args\n");
+    return 0;
+  }
+  int num = strtol(arg, NULL, 10);
+  wp_remove(num);
+
+  return 0;
+}
+
 
 static struct {
   const char *name;
@@ -139,9 +167,11 @@ static struct {
 
   /* TODO: Add more commands */
   { "si", "Execute N steps, default 1", cmd_si },
-  { "info", "Display information about registers or wathpoints", cmd_info},
+  { "info", "Display information about registers or watchpoints", cmd_info},
   { "x", "Usage: x N EXPR. Scan the memory from EXPR", cmd_x},
   { "p", "Usage: p EXPR. Calculate the experssion", cmd_p},
+  { "w", "Usage: w EXPR. set watchpoints", cmd_w},
+  { "d", "USage: d N. delete", cmd_d },
 };
 
 #define NR_CMD ARRLEN(cmd_table)

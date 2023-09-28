@@ -305,7 +305,8 @@ word_t eval(int p, int q, bool *success) {
     bool ok1, ok2;
     word_t val1 = eval(p, op - 1, &ok1);
     word_t val2 = eval(op + 1, q, &ok2);
-    
+
+
     if (!ok2) {
       *success = false;
       return 0;
@@ -317,6 +318,7 @@ word_t eval(int p, int q, bool *success) {
       ret = calc1(tokens[op].type,val2, success);
     }
     return ret;
+
   }
 }
 

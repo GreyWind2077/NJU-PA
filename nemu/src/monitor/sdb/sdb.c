@@ -169,8 +169,8 @@ static struct {
   { "info", "Display information about registers or watchpoints", cmd_info},
   { "x", "Usage: x N EXPR. Scan the memory from EXPR", cmd_x},
   { "p", "Usage: p EXPR. Calculate the experssion", cmd_p},
-  { "w", "Usage: w EXPR. set watchpoints", cmd_w},
-  { "d", "USage: d N. delete", cmd_d },
+  { "w", "Usage: w EXPR. set watchpoint", cmd_w},
+  { "d", "USage: d N. delete watchpoint", cmd_d },
 };
 
 #define NR_CMD ARRLEN(cmd_table)

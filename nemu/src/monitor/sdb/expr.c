@@ -20,15 +20,21 @@
  */
 #include <regex.h>
 
+#include "memory/vaddr.h"
 
 
 enum {
-  TK_NOTYPE = 256, TK_EQ,
+  TK_NOTYPE = 256,
 
   /* TODO: Add more token types */
   TK_NUM, // 10, 16
   TK_REG,
   TK_VAR,
+
+  TK_POS, TK_NEG, TK_DEREF,
+  TK_EQ, TK_NEQ, TK_GT, TK_LT, TK_GE, TK_LE,
+  TK_AND,
+  TK_OR,
 
 
 };
@@ -50,12 +56,36 @@ static struct rule {
   {"\\)", ')'},
   {"\\*", '*'},
   {"/", '/'},
+  {"<", TK_LT},
+  {"<=", TK_LE},
+  {">", TK_GT},
+  {">=", TK_GE},
+  {"!=", TK_NEQ},
+  {"&&", TK_AND},
+  {"\\|\\|", TK_OR},
 
   {"[0-9]+", TK_NUM},
   {"\\$\\w+", TK_REG},
   {"[A-Za-z_]\\w*", TK_VAR},
 
 };
+
+// #define TYPE_FROM (type, types) type_from(type, types, ARRLEN(types))
+
+static int bound_types[] = {')', TK_NUM, TK_REG};
+static int nop_types[] = {'(', ')', TK_NEG, TK_REG};
+static int op_types[] = {TK_NEG, TK_POS, TK_DEREF};
+
+
+static bool type_from(int type, int types[], int len) {
+  for (int i = 0; i < len; i++) {
+    if (type == types[i]) return true;
+  }
+  return false;
+}
+
+
+
 
 #define NR_REGEX ARRLEN(rules)
 
@@ -118,10 +148,21 @@ static bool make_token(char *e) {
         switch (rules[i].token_type) {
           case TK_NUM:
           case TK_REG:
-          case TK_VAR:
             strncpy(tokens[nr_token].str, substr_start, substr_len);
             tokens[nr_token].str[substr_len] = '\0';
-
+            break;
+          case '*':
+          case '-':
+          case '+':
+            if (nr_token == 0 || !type_from(tokens[nr_token-1].type, bound_types, ARRLEN(bound_types))) {
+              switch (rules[i].token_type) {
+                case '-': tokens[nr_token].type = TK_NEG; break;
+                case '+': tokens[nr_token].type = TK_POS; break;
+                case '*': tokens[nr_token].type = TK_DEREF; break; 
+              }
+            }
+            break;
+            
           //default: TODO();
         }
         nr_token++;
@@ -156,12 +197,8 @@ bool check_parentheses(int p, int q) {
 
 
 int get_position(int p, int q) {
-  int  ret = -1, par = 0, op_type = 0;
+  int  ret = -1, par = 0, op_pre = 0;
   for (int i = p; i <= q; i++) {
-    if (tokens[i].type == TK_NUM) {
-      continue;
-    }
-
     if (tokens[i].type == '(') {
       par++;
     } else if (tokens[i].type == ')') {
@@ -169,64 +206,61 @@ int get_position(int p, int q) {
         return -1;
       }
       par--;
+    } else if (type_from(tokens[i].type, nop_types, ARRLEN(nop_types))) {
+      continue;
     } else if (par > 0) {
       continue;
     } else {
-      int type = 0;
+      int tmp_pre = 0;
       switch (tokens[i].type)
       {
-      case '*':
-      case '/':
-        type = 1;
-        break;
-      case '+':
-      case '-':
-        type = 2;
-        break;
-      default:
-        assert(0);
+      case TK_OR: tmp_pre++;
+      case TK_AND: tmp_pre++;
+      case TK_EQ: case TK_NEQ: tmp_pre++;
+      case TK_LT: case TK_GT: case TK_GE: case TK_LE: tmp_pre++;
+      case '+': case '-': tmp_pre++;
+      case '*': case '/': tmp_pre++;
+      case TK_NEG: case TK_DEREF: case TK_POS: tmp_pre++; break;
+      default: return -1;
       }
-      if (type >= op_type) {
-        op_type = type;
+      if (tmp_pre > op_pre || (tmp_pre == op_pre && !type_from(tokens[i].type, op_types, ARRLEN(op_types)))) {
+        op_pre = tmp_pre;
         ret = i;
       }
 
     }
   }
-
-
   if (par != 0) return -1;
-
   return ret;
+}
+
+word_t eval_op(int i, bool *success) {
+  switch (tokens[i].type) {
+  case TK_NUM:
+    if (strncmp("0x", tokens[i].str, 2) == 0) return strtol(tokens[i].str, NULL, 16);
+    else return strtol(tokens[i].str, NULL, 10);
+  case TK_REG:
+    return isa_reg_str2val(tokens[i].str, success);
+  default:
+    *success = false;
+    return 0;
+  }
+}
+
+word_t calc1(int op, word_t val, bool *success) {
+  switch (op) {
+  case TK_NEG: return -val;
+  case TK_POS: return val;
+  case TK_DEREF: return vaddr_read(val, 8);
+  default:
+    *success = false;
+  }
+  return 0;
 
 }
 
-word_t eval(int p, int q, bool *success) {
-  *success = true;
-  if (p > q) {
-    *success = false;
-    return 0;
-  } else if (p == q) {
-    if (tokens[p].type != TK_NUM) {
-      *success = false;
-      return 0;
-    }
-    word_t ret = strtol(tokens[p].str, NULL, 10);
-    return ret;
-  } else if (check_parentheses(p, q)) {
-    return eval(p + 1, q -1, success);
-  } else {
-    int op = get_position(p, q);
-    if (op < 0) {
-      *success = false;
-      return 0;
-    }
-    word_t val1 = eval(p, op - 1, success);
-    if (!*success) return 0;
-    word_t val2 = eval(op + 1, q, success);
-    if (!*success) return 0;
-    
-    switch (tokens[op].type) {
+word_t calc2(int op, word_t val1, word_t val2, bool *success) {
+  switch (op) {
     case '+': return val1 + val2;
     case '-': return val1 - val2;
     case '*': return val1 * val2;
@@ -235,12 +269,54 @@ word_t eval(int p, int q, bool *success) {
         *success = false;
         return 0;
       }
-      return (sword_t)val1 / (sword_t)val2;
-    
-    default:
-      assert(0);
-    
+      return (sword_t)val1 / (sword_t) val2;
+    case TK_AND: return val1 && val2;
+    case TK_OR: return val1 || val2;
+    case TK_EQ: return val1 == val2;
+    case TK_NEG: return val1 != val2;
+    case TK_LE: return val1 < val2;
+    case TK_LT: return val1 <= val2;
+    case TK_GT: return val1 > val2;
+    case TK_GE: return val1 >= val2;
+    default :
+      *success = false;
+      return 0;
+
+  }
+}
+
+
+
+word_t eval(int p, int q, bool *success) {
+  *success = true;
+  if (p > q) {
+    *success = false;
+    return 0;
+  } else if (p == q) {
+    return eval_op(p, success);
+  } else if (check_parentheses(p, q)) {
+    return eval(p + 1, q -1, success);
+  } else {
+    int op = get_position(p, q);
+    if (op < 0) {
+      *success = false;
+      return 0;
     }
+    bool ok1, ok2;
+    word_t val1 = eval(p, op - 1, &ok1);
+    word_t val2 = eval(op + 1, q, &ok2);
+    
+    if (!ok2) {
+      *success = false;
+      return 0;
+    }
+    word_t ret;
+    if (ok1) {
+      ret = calc2(tokens[op].type, val1, val2, success);
+    } else {
+      ret = calc1(tokens[op].type,val2, success);
+    }
+    return ret;
   }
 }
 
